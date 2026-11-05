@@ -127,117 +127,66 @@ class DashboardViewModel extends ChangeNotifier {
     _replaceAssignmentInMemory(updated);
   }
 
-  Future<String> triggerResearch(String assignmentId) async {
+  Future<AssignmentModel> runResearch(String assignmentId) async {
     _busyAssignments[assignmentId] = true;
     notifyListeners();
     try {
       final updated = await repository.executeResearch(assignmentId);
       _replaceAssignmentInMemory(updated);
       _health = await repository.getHealth();
-      return 'Investigación de 4 Pilares completada exitosamente.';
-    } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      return 'Fallo en investigación: $msg';
+      return updated;
     } finally {
       _busyAssignments[assignmentId] = false;
       notifyListeners();
     }
   }
 
-  Future<String> triggerResolution(String assignmentId) async {
+  Future<AssignmentModel> runResolution(String assignmentId) async {
     _busyAssignments[assignmentId] = true;
     notifyListeners();
     try {
       final updated = await repository.executeResolution(assignmentId);
       _replaceAssignmentInMemory(updated);
       _health = await repository.getHealth();
-      return 'Resolución completada. Documento final generado.';
-    } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      return 'Fallo en resolución: $msg';
+      return updated;
     } finally {
       _busyAssignments[assignmentId] = false;
       notifyListeners();
     }
   }
 
-  Future<String> addExternalTopic({
+  Future<AssignmentModel> addExternalTopic({
     required String title,
     required String descriptionText,
     required String categoryName,
     required String taskMode,
     List<String> filePaths = const [],
   }) async {
-    _isLoading = true;
-    notifyListeners();
-    try {
-      final newAssignment = await repository.createExternalAssignment(
-        title: title,
-        descriptionText: descriptionText,
-        categoryName: categoryName,
-        taskMode: taskMode,
-        filePaths: filePaths,
-      );
-
-      _insertAssignmentInMemory(newAssignment);
-      _health = await repository.getHealth();
-      return 'Proyecto externo creado exitosamente.';
-    } catch (e) {
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      return 'Error al crear proyecto: $msg';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    final created = await repository.createExternalAssignment(
+      title: title,
+      descriptionText: descriptionText,
+      categoryName: categoryName,
+      taskMode: taskMode,
+      filePaths: filePaths,
+    );
+    await refreshAll();
+    return created;
   }
 
   void _replaceAssignmentInMemory(AssignmentModel updated) {
-    _courses = _courses.map((c) {
-      if (c.id == updated.courseId) {
-        final acts = c.assignments
-            .map((a) => a.id == updated.id ? updated : a)
-            .toList();
-        return CourseModel(
-          id: c.id,
-          name: c.name,
-          totalGrade: c.totalGrade,
-          isExternal: c.isExternal,
-          assignments: acts,
-        );
-      }
-      return c;
+    _courses = _courses.map((course) {
+      if (course.id != updated.courseId) return course;
+      final newActs = course.assignments
+          .map((a) => a.id == updated.id ? updated : a)
+          .toList();
+      return CourseModel(
+        id: course.id,
+        name: course.name,
+        totalGrade: course.totalGrade,
+        isExternal: course.isExternal,
+        assignments: newActs,
+      );
     }).toList();
-    notifyListeners();
-  }
-
-  void _insertAssignmentInMemory(AssignmentModel newAssignment) {
-    bool found = false;
-    _courses = _courses.map((c) {
-      if (c.id == newAssignment.courseId) {
-        found = true;
-        return CourseModel(
-          id: c.id,
-          name: c.name,
-          totalGrade: c.totalGrade,
-          isExternal: c.isExternal,
-          assignments: [newAssignment, ...c.assignments],
-        );
-      }
-      return c;
-    }).toList();
-
-    if (!found) {
-      _courses = [
-        CourseModel(
-          id: newAssignment.courseId,
-          name: newAssignment.courseName,
-          totalGrade: '-',
-          isExternal: newAssignment.isExternal,
-          assignments: [newAssignment],
-        ),
-        ..._courses,
-      ];
-    }
     notifyListeners();
   }
 }

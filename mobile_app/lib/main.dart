@@ -73,6 +73,16 @@ class _LaunchWorkspaceShellState extends State<LaunchWorkspaceShell> {
   String _activeScreen = 'home'; // 'home' | 'psm' | 'external' | 'settings'
   String? _selectedCourseId;
 
+  void _handleBack() {
+    setState(() {
+      if (_selectedCourseId != null) {
+        _selectedCourseId = null;
+      } else if (_activeScreen != 'home') {
+        _activeScreen = 'home';
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -80,91 +90,102 @@ class _LaunchWorkspaceShellState extends State<LaunchWorkspaceShell> {
       builder: (context, _) {
         final vm = widget.viewModel;
         final health = vm.health;
+        final bool isRootLevel =
+            _activeScreen == 'home' && _selectedCourseId == null;
 
-        return Scaffold(
-          appBar: AppBar(
-            leading: _activeScreen != 'home'
-                ? IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 18),
-                    onPressed: () => setState(() => _activeScreen = 'home'),
+        return PopScope(
+          canPop: isRootLevel,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            _handleBack();
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: (!isRootLevel)
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                      onPressed: _handleBack,
+                    )
+                  : null,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _activeScreen == 'psm'
+                        ? (_selectedCourseId != null
+                            ? 'V.I.E.R.N.E.S. · MATERIA'
+                            : 'V.I.E.R.N.E.S. · SAIA PSM')
+                        : _activeScreen == 'external'
+                            ? 'V.I.E.R.N.E.S. · TEMA LIBRE'
+                            : _activeScreen == 'settings'
+                                ? 'V.I.E.R.N.E.S. · SISTEMA'
+                                : 'V.I.E.R.N.E.S.',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Text(
+                    vm.isLoading
+                        ? 'Conectando al servidor...'
+                        : '${health?.aiMode ?? "Desconectado"} · ${health?.totalTokensUsed ?? 0} tokens',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: vm.isLoading
+                          ? Colors.amberAccent
+                          : (health != null
+                              ? const Color(0xFF4CAF50)
+                              : const Color(0xFF8E8E98)),
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                if (vm.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    child: Center(
+                      child: SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white70),
+                        ),
+                      ),
+                    ),
                   )
-                : null,
-            title: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _activeScreen == 'psm'
-                      ? 'V.I.E.R.N.E.S. · SAIA PSM'
-                      : _activeScreen == 'external'
-                          ? 'V.I.E.R.N.E.S. · TEMA LIBRE'
-                          : _activeScreen == 'settings'
-                              ? 'V.I.E.R.N.E.S. · SISTEMA'
-                              : 'V.I.E.R.N.E.S.',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    letterSpacing: 1.2,
+                else ...[
+                  if (_activeScreen == 'psm')
+                    IconButton(
+                      tooltip: 'Sincronizar SAIA en vivo',
+                      onPressed: vm.isSyncing ? null : () => vm.syncSaiaLive(),
+                      icon: vm.isSyncing
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.sync, size: 18),
+                    ),
+                  IconButton(
+                    tooltip: 'Actualizar datos',
+                    onPressed: () => vm.refreshAll(),
+                    icon: const Icon(Icons.refresh, size: 18),
                   ),
-                ),
-                Text(
-                  vm.isLoading
-                      ? 'Conectando al servidor...'
-                      : '${health?.aiMode ?? "Desconectado"} · ${health?.totalTokensUsed ?? 0} tokens',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: vm.isLoading
-                        ? Colors.amberAccent
-                        : (health != null
-                            ? const Color(0xFF4CAF50)
-                            : const Color(0xFF8E8E98)),
-                    fontFamily: 'monospace',
-                  ),
+                ],
+                IconButton(
+                  tooltip: 'Ajustes',
+                  onPressed: () => setState(() => _activeScreen = 'settings'),
+                  icon: const Icon(Icons.settings_outlined, size: 18),
                 ),
               ],
             ),
-            actions: [
-              if (vm.isLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12),
-                  child: Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white70),
-                      ),
-                    ),
-                  ),
-                )
-              else ...[
-                if (_activeScreen == 'psm')
-                  IconButton(
-                    tooltip: 'Sincronizar SAIA en vivo',
-                    onPressed: vm.isSyncing ? null : () => vm.syncSaiaLive(),
-                    icon: vm.isSyncing
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.sync, size: 18),
-                  ),
-                IconButton(
-                  tooltip: 'Actualizar datos',
-                  onPressed: () => vm.refreshAll(),
-                  icon: const Icon(Icons.refresh, size: 18),
-                ),
-              ],
-              IconButton(
-                tooltip: 'Ajustes',
-                onPressed: () => setState(() => _activeScreen = 'settings'),
-                icon: const Icon(Icons.settings_outlined, size: 18),
-              ),
-            ],
+            body: _buildActiveBody(context, vm),
           ),
-          body: _buildActiveBody(context, vm),
         );
       },
     );
