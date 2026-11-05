@@ -126,17 +126,21 @@ def _seed_defaults_and_legacy_data() -> None:
     if not get_setting("deepseek_model"):
         set_setting("deepseek_model", "deepseek-reasoner")
 
-    # Import MoodleSession from legacy bot if not set yet
+    # Import MoodleSession from environment variable or legacy bot if not set yet
     if not get_setting("moodle_session"):
-        cfg_path = os.path.join(LEGACY_BOT_DIR, "config.json")
-        if os.path.exists(cfg_path):
-            try:
-                with open(cfg_path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                    if data.get("moodle_session"):
-                        set_setting("moodle_session", str(data["moodle_session"]).strip())
-            except Exception:
-                pass
+        env_cookie = os.getenv("MOODLE_SESSION", "").strip()
+        if env_cookie:
+            set_setting("moodle_session", env_cookie)
+        else:
+            cfg_path = os.path.join(LEGACY_BOT_DIR, "config.json")
+            if os.path.exists(cfg_path):
+                try:
+                    with open(cfg_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if data.get("moodle_session"):
+                            set_setting("moodle_session", str(data["moodle_session"]).strip())
+                except Exception:
+                    pass
 
     # Ensure virtual course for external topics exists
     now = datetime.now().isoformat()
