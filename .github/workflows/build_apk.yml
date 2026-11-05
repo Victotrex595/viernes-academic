@@ -40,29 +40,29 @@ jobs:
           find android -name "build.gradle" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 36/g' {} +
           find android -name "build.gradle.kts" -exec sed -i 's/compileSdk = .*/compileSdk = 36/g' {} +
 
-          # 2. Desactivar validacion estricta de AAR Metadata y forzar SDK 36 en plugins (file_picker, etc.)
+          # 2. Desactivar validacion estricta de AAR Metadata y forzar SDK 36 en plugins
           cat << 'EOF' >> android/build.gradle
 
-allprojects {
-    tasks.whenTaskAdded { task ->
-        if (task.name.contains("checkAarMetadata") || 
-            task.name.contains("checkDebugAarMetadata") || 
-            task.name.contains("checkReleaseAarMetadata")) {
-            task.enabled = false
-        }
-    }
-}
+          allprojects {
+              tasks.whenTaskAdded { task ->
+                  if (task.name.contains("checkAarMetadata") || 
+                      task.name.contains("checkDebugAarMetadata") || 
+                      task.name.contains("checkReleaseAarMetadata")) {
+                      task.enabled = false
+                  }
+              }
+          }
 
-subprojects {
-    afterEvaluate { project ->
-        if (project.hasProperty('android')) {
-            project.android {
-                compileSdkVersion 36
-            }
-        }
-    }
-}
-EOF
+          subprojects {
+              afterEvaluate { project ->
+                  if (project.hasProperty('android')) {
+                      project.android {
+                          compileSdkVersion 36
+                      }
+                  }
+              }
+          }
+          EOF
 
           flutter pub get
 
