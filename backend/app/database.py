@@ -6,8 +6,19 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 BASE_DIR = os.getenv("PHONEAPP_DATA_DIR", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.makedirs(BASE_DIR, exist_ok=True)
 DB_PATH = os.path.join(BASE_DIR, "phoneapp.db")
 LEGACY_BOT_DIR = os.getenv("LEGACY_BOT_DIR", r"C:\Users\Admin\Documents\saia_telegram_bot")
+
+# Si se usa un directorio separado (ej. /tmp/data en Render/Docker) y no existe aún phoneapp.db,
+# copiar la base de datos precargada con los cursos de la cátedra
+_REPO_DB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "phoneapp.db")
+if not os.path.exists(DB_PATH) and os.path.exists(_REPO_DB) and os.path.abspath(DB_PATH) != os.path.abspath(_REPO_DB):
+    try:
+        import shutil
+        shutil.copy2(_REPO_DB, DB_PATH)
+    except Exception:
+        pass
 
 
 def detect_default_task_mode(title: str, description: str = "") -> str:
@@ -20,6 +31,7 @@ def detect_default_task_mode(title: str, description: str = "") -> str:
 
 
 def get_connection() -> sqlite3.Connection:
+    os.makedirs(os.path.dirname(os.path.abspath(DB_PATH)), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn

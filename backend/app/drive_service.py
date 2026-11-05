@@ -11,9 +11,11 @@ from docx import Document as DocxDocument
 from .database import get_setting, set_setting
 
 BASE_DIR = os.getenv("PHONEAPP_DATA_DIR", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.makedirs(BASE_DIR, exist_ok=True)
 CREDENTIALS_PATH = os.path.join(BASE_DIR, "google_credentials.json")
 TOKEN_PATH = os.path.join(BASE_DIR, "google_token.json")
 LOCAL_DRIVE_MIRROR = os.path.join(BASE_DIR, "Moodle_PSM_Estudio")
+os.makedirs(LOCAL_DRIVE_MIRROR, exist_ok=True)
 
 SCOPES = ["https://www.googleapis.com/auth/drive.file"]
 

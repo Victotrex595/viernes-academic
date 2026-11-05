@@ -11,7 +11,9 @@ from bs4 import BeautifulSoup
 BASE_URL = "https://saia2.psm.edu.ve"
 DEFAULT_COURSE_IDS = ["27752", "27753", "27604", "27611", "27755", "26639"]
 BASE_DIR = os.getenv("PHONEAPP_DATA_DIR", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.makedirs(BASE_DIR, exist_ok=True)
 DOWNLOADS_DIR = os.path.join(BASE_DIR, "downloads")
+os.makedirs(DOWNLOADS_DIR, exist_ok=True)
 
 
 def clean_text(text: str) -> str:

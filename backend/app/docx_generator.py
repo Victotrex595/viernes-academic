@@ -8,7 +8,9 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Cm, Pt, RGBColor
 
 BASE_DIR = os.getenv("PHONEAPP_DATA_DIR", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.makedirs(BASE_DIR, exist_ok=True)
 GENERATED_DOCS_DIR = os.path.join(BASE_DIR, "generated_docs")
+os.makedirs(GENERATED_DOCS_DIR, exist_ok=True)
 PSM_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "plantilla_psm.docx")
 
 SPANISH_MONTHS = {
