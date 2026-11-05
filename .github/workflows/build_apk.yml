@@ -35,35 +35,11 @@ jobs:
           cd mobile_app
           flutter create . --platforms=android --org com.viernes.academic
           
-          # 1. Configurar compileSdk = 36 en archivos gradle
-          find android -name "build.gradle" -exec sed -i 's/compileSdk = .*/compileSdk = 36/g' {} +
-          find android -name "build.gradle" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 36/g' {} +
-          find android -name "build.gradle.kts" -exec sed -i 's/compileSdk = .*/compileSdk = 36/g' {} +
-
-          # 2. Desactivar validacion estricta de AAR Metadata y forzar SDK 36 en plugins
-          cat << 'EOF' >> android/build.gradle
-
-          allprojects {
-              tasks.whenTaskAdded { task ->
-                  if (task.name.contains("checkAarMetadata") || 
-                      task.name.contains("checkDebugAarMetadata") || 
-                      task.name.contains("checkReleaseAarMetadata")) {
-                      task.enabled = false
-                  }
-              }
-          }
-
-          subprojects {
-              afterEvaluate { project ->
-                  if (project.hasProperty('android')) {
-                      project.android {
-                          compileSdkVersion 36
-                      }
-                  }
-              }
-          }
-          EOF
-
+          # Configurar compileSdk = 35 de forma nativa en build.gradle / build.gradle.kts
+          find android -name "build.gradle" -exec sed -i 's/compileSdk = .*/compileSdk = 35/g' {} +
+          find android -name "build.gradle" -exec sed -i 's/compileSdkVersion .*/compileSdkVersion 35/g' {} +
+          find android -name "build.gradle.kts" -exec sed -i 's/compileSdk = .*/compileSdk = 35/g' {} +
+          
           flutter pub get
 
       - name: Compilar APK en modo Release
