@@ -18,7 +18,9 @@ downloads/
 backend/downloads/
 eggs/
 .eggs/
-lib/
+# Python y C Extensions build
+# lib/ (removido para no ignorar mobile_app/lib)
+build/lib/
 lib64/
 parts/
 sdist/
