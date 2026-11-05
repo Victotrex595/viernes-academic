@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: phoneapp_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PHONEAPP_DATA_DIR=/app/data
+      - PHONEAPP_PROJECT_ROOT=/app
+      - ENV_FILE_PATH=/app/.env
+    volumes:
+      - ./data:/app/data
+      - ./.env:/app/.env:ro
+    ports:
+      - "8000:8000"
+    networks:
+      - phoneapp_net
+
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: phoneapp_caddy
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+    depends_on:
+      - app
+    networks:
+      - phoneapp_net
+
+networks:
+  phoneapp_net:
+    driver: bridge

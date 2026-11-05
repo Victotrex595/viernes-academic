@@ -1,0 +1,16 @@
+# ==============================================================================
+# Caddyfile para V.I.E.R.N.E.S. PhoneApp
+# Si defines DOMAIN en tu .env (ej. mi-app.duckdns.org), Caddy obtiene SSL gratis.
+# Si dejas DOMAIN vacío, responderá directamente en HTTP en el puerto 80 por IP.
+# ==============================================================================
+
+{$DOMAIN::80} {
+    encode gzip zstd
+
+    # Proxy hacia el contenedor de FastAPI
+    reverse_proxy app:8000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}

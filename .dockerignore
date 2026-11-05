@@ -1,0 +1,17 @@
+.git
+.gitignore
+.env
+*.pyc
+__pycache__
+.pytest_cache
+backend/.venv
+backend/**/__pycache__
+mobile_app
+caddy_data
+caddy_config
+data
+tests
+*.log
+*.tmp
+Iniciar_PhoneApp_Servidor.bat
+Instalar_Flutter_y_Compilar_APK.bat

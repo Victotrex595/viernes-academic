@@ -1,0 +1,23 @@
+name: psm_ai_consortium_app
+description: Aplicacion movil para Moodle SAIA PSM con Consorcio de IA (Gemini 3.8/4 + DeepSeek-R1) y 4 Pilares NotebookLM.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  file_picker: ^8.1.2
+  url_launcher: ^6.3.1
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
