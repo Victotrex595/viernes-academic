@@ -116,7 +116,7 @@ def _get_ai_engine() -> AIConsortiumEngine:
     )
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 def serve_mobile_app_home() -> str:
     return MOBILE_WEB_HTML
 
@@ -193,7 +193,7 @@ def serve_service_worker() -> Response:
     return Response(content=js, media_type="application/javascript")
 
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 def get_health(verify_saia: bool = Query(False)) -> Dict[str, Any]:
     cookie = get_setting("moodle_session", "")
     saia_status: Dict[str, Any] = {"configured": bool(cookie), "active": None, "user": "Estudiante PSM"}
