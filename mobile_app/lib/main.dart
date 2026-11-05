@@ -8,7 +8,8 @@ import 'ui/features/settings/views/settings_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  final apiService = ApiService(baseUrl: 'https://viernes-academic.onrender.com');
+  final apiService =
+      ApiService(baseUrl: 'https://viernes-academic.onrender.com');
   final repository = AcademicRepository(apiService: apiService);
   final viewModel = DashboardViewModel(repository: repository)..initialize();
   runApp(PsmConsortiumApp(viewModel: viewModel));
@@ -106,22 +107,56 @@ class _LaunchWorkspaceShellState extends State<LaunchWorkspaceShell> {
                   ),
                 ),
                 Text(
-                  '${health?.aiMode ?? "Inicializando..."} · ${health?.totalTokensUsed ?? 0} tokens',
-                  style: const TextStyle(
+                  vm.isLoading
+                      ? 'Conectando al servidor...'
+                      : '${health?.aiMode ?? "Desconectado"} · ${health?.totalTokensUsed ?? 0} tokens',
+                  style: TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF8E8E98),
+                    color: vm.isLoading
+                        ? Colors.amberAccent
+                        : (health != null
+                            ? const Color(0xFF4CAF50)
+                            : const Color(0xFF8E8E98)),
                     fontFamily: 'monospace',
                   ),
                 ),
               ],
             ),
             actions: [
-              if (_activeScreen == 'psm')
+              if (vm.isLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12),
+                  child: Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white70),
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                if (_activeScreen == 'psm')
+                  IconButton(
+                    tooltip: 'Sincronizar SAIA en vivo',
+                    onPressed: vm.isSyncing ? null : () => vm.syncSaiaLive(),
+                    icon: vm.isSyncing
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.sync, size: 18),
+                  ),
                 IconButton(
-                  tooltip: 'Sincronizar SAIA',
-                  onPressed: vm.isSyncing ? null : () => vm.syncSaiaLive(),
-                  icon: const Icon(Icons.sync, size: 18),
+                  tooltip: 'Actualizar datos',
+                  onPressed: () => vm.refreshAll(),
+                  icon: const Icon(Icons.refresh, size: 18),
                 ),
+              ],
               IconButton(
                 tooltip: 'Ajustes',
                 onPressed: () => setState(() => _activeScreen = 'settings'),
@@ -163,170 +198,224 @@ class _LaunchWorkspaceShellState extends State<LaunchWorkspaceShell> {
         .where((c) => !c.isExternal || c.assignments.isNotEmpty)
         .toList();
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text(
-          'ESPACIOS DE TRABAJO',
-          style: TextStyle(
-            fontSize: 11,
-            fontFamily: 'monospace',
-            color: Color(0xFF71717A),
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 10),
-
-        // Main Button 1: Tareas del PSM
-        Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => setState(() => _activeScreen = 'psm'),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
+    return RefreshIndicator(
+      onRefresh: () => vm.refreshAll(),
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Banner de error si falla la conexión
+          if (vm.errorMessage != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2E1515),
+                borderRadius: BorderRadius.circular(10),
+                border:
+                    Border.all(color: const Color(0xFFE53935).withOpacity(0.6)),
+              ),
               child: Row(
                 children: [
+                  const Icon(Icons.wifi_off,
+                      color: Color(0xFFE53935), size: 20),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Asignaciones PSM (SAIA)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Gestiona tus materias inscritas, inspecciona lineamientos del docente, genera los 4 pilares para NotebookLM o resuelve tareas por consenso.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF90909C),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${psmCourses.length} materias · ${psmActs.where((a) => !a.isCompleted).length} activas',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            color: Color(0xFFA1A1AA),
-                          ),
-                        ),
-                      ],
+                    child: Text(
+                      vm.errorMessage!,
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFFFFCDD2)),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.chevron_right, color: Color(0xFFA1A1AA)),
+                  TextButton(
+                    onPressed: () => vm.refreshAll(),
+                    child: const Text('Reintentar',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold)),
+                  ),
                 ],
               ),
             ),
-          ),
-        ),
-        const SizedBox(height: 12),
+            const SizedBox(height: 14),
+          ],
 
-        // Main Button 2: Tema Libre
-        Card(
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => setState(() => _activeScreen = 'external'),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Tema Libre y Evaluación Externa',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Investiga cualquier tema fuera de la universidad bajo los 4 pilares o adjunta una evaluación externa para su resolución.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF90909C),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${extActs.length} proyectos registrados',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontFamily: 'monospace',
-                            color: Color(0xFFA1A1AA),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Icon(Icons.chevron_right, color: Color(0xFFA1A1AA)),
-                ],
-              ),
+          const Text(
+            'ESPACIOS DE TRABAJO',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              color: Color(0xFF71717A),
+              letterSpacing: 0.8,
             ),
           ),
-        ),
+          const SizedBox(height: 10),
 
-        const SizedBox(height: 24),
-        const Text(
-          'DOCUMENTACIÓN POR MATERIA',
-          style: TextStyle(
-            fontSize: 11,
-            fontFamily: 'monospace',
-            color: Color(0xFF71717A),
-            letterSpacing: 0.8,
-          ),
-        ),
-        const SizedBox(height: 10),
-        ...visibleCourses.map((course) {
-          final activeActs = course.assignments
-              .where((a) => !a.isOverdue)
-              .toList();
-          return Card(
-            margin: const EdgeInsets.only(bottom: 10),
-            child: ExpansionTile(
-              title: Text(
-                course.name,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              subtitle: Text(
-                '${activeActs.length} actividad(es) activa(s)',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontFamily: 'monospace',
-                  color: Color(0xFF8E8E98),
-                ),
-              ),
-              children: activeActs.isEmpty
-                  ? [
-                      const Padding(
-                        padding: EdgeInsets.all(14),
-                        child: Text(
-                          'Sin actividades activas en esta materia.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF71717A),
+          // Main Button 1: Tareas del PSM
+          Card(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => setState(() => _activeScreen = 'psm'),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Asignaciones PSM (SAIA)',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Gestiona tus materias inscritas, inspecciona lineamientos del docente, genera los 4 pilares para NotebookLM o resuelve tareas por consenso.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF90909C),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${psmCourses.length} materias · ${psmActs.where((a) => !a.isCompleted).length} activas',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                              color: Color(0xFFA1A1AA),
+                            ),
+                          ),
+                        ],
                       ),
-                    ]
-                  : activeActs
-                      .map((a) => AssignmentCard(assignment: a, viewModel: vm))
-                      .toList(),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.chevron_right, color: Color(0xFFA1A1AA)),
+                  ],
+                ),
+              ),
             ),
-          );
-        }),
-      ],
+          ),
+          const SizedBox(height: 12),
+
+          // Main Button 2: Tema Libre
+          Card(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => setState(() => _activeScreen = 'external'),
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Tema Libre y Evaluación Externa',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Investiga cualquier tema fuera de la universidad bajo los 4 pilares o adjunta una evaluación externa para su resolución.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF90909C),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${extActs.length} proyectos registrados',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                              color: Color(0xFFA1A1AA),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.chevron_right, color: Color(0xFFA1A1AA)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+          const Text(
+            'DOCUMENTACIÓN POR MATERIA',
+            style: TextStyle(
+              fontSize: 11,
+              fontFamily: 'monospace',
+              color: Color(0xFF71717A),
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (visibleCourses.isEmpty && !vm.isLoading) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  vm.errorMessage != null
+                      ? 'No se pudieron cargar las materias. Revisa tu conexión.'
+                      : 'No hay materias registradas aún.',
+                  style:
+                      const TextStyle(fontSize: 13, color: Color(0xFF71717A)),
+                ),
+              ),
+            ),
+          ],
+          ...visibleCourses.map((course) {
+            final activeActs =
+                course.assignments.where((a) => !a.isOverdue).toList();
+            return Card(
+              margin: const EdgeInsets.only(bottom: 10),
+              child: ExpansionTile(
+                title: Text(
+                  course.name,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                subtitle: Text(
+                  '${activeActs.length} actividad(es) activa(s)',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    color: Color(0xFF8E8E98),
+                  ),
+                ),
+                children: activeActs.isEmpty
+                    ? [
+                        const Padding(
+                          padding: EdgeInsets.all(14),
+                          child: Text(
+                            'Sin actividades activas en esta materia.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF71717A),
+                            ),
+                          ),
+                        ),
+                      ]
+                    : activeActs
+                        .map(
+                            (a) => AssignmentCard(assignment: a, viewModel: vm))
+                        .toList(),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 
@@ -341,55 +430,67 @@ class _LaunchWorkspaceShellState extends State<LaunchWorkspaceShell> {
         .where((a) => !vm.onlyPending || !a.isCompleted)
         .toList();
 
-    return Column(
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          child: Row(
-            children: [
-              FilterChip(
-                label: const Text('Pendientes'),
-                selected: vm.onlyPending,
-                onSelected: (val) => vm.toggleOnlyPending(val),
-              ),
-              const SizedBox(width: 8),
-              ChoiceChip(
-                label: const Text('Todas'),
-                selected: _selectedCourseId == null,
-                onSelected: (_) => setState(() => _selectedCourseId = null),
-              ),
-              const SizedBox(width: 6),
-              ...psmCourses.map((c) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: ChoiceChip(
-                    label: Text(
-                      c.name.length > 22
-                          ? '${c.name.substring(0, 22)}…'
-                          : c.name,
+    return RefreshIndicator(
+      onRefresh: () => vm.refreshAll(),
+      child: Column(
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            child: Row(
+              children: [
+                FilterChip(
+                  label: const Text('Pendientes'),
+                  selected: vm.onlyPending,
+                  onSelected: (val) => vm.toggleOnlyPending(val),
+                ),
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: const Text('Todas'),
+                  selected: _selectedCourseId == null,
+                  onSelected: (_) => setState(() => _selectedCourseId = null),
+                ),
+                const SizedBox(width: 6),
+                ...psmCourses.map((c) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: ChoiceChip(
+                      label: Text(
+                        c.name.length > 22
+                            ? '${c.name.substring(0, 22)}…'
+                            : c.name,
+                      ),
+                      selected: _selectedCourseId == c.id,
+                      onSelected: (_) =>
+                          setState(() => _selectedCourseId = c.id),
                     ),
-                    selected: _selectedCourseId == c.id,
-                    onSelected: (_) => setState(() => _selectedCourseId = c.id),
+                  );
+                }),
+              ],
+            ),
+          ),
+          Expanded(
+            child: assignments.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No hay actividades para mostrar.',
+                      style: TextStyle(fontSize: 13, color: Color(0xFF71717A)),
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    itemCount: assignments.length,
+                    itemBuilder: (context, idx) {
+                      return AssignmentCard(
+                        assignment: assignments[idx],
+                        viewModel: vm,
+                      );
+                    },
                   ),
-                );
-              }),
-            ],
           ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(bottom: 24),
-            itemCount: assignments.length,
-            itemBuilder: (context, idx) {
-              return AssignmentCard(
-                assignment: assignments[idx],
-                viewModel: vm,
-              );
-            },
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

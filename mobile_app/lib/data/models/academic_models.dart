@@ -11,9 +11,9 @@ class StudyFileItem {
 
   factory StudyFileItem.fromJson(Map<String, dynamic> json) {
     return StudyFileItem(
-      name: (json['name'] ?? '') as String,
-      localPath: (json['local_path'] ?? '') as String,
-      url: (json['url'] ?? '') as String,
+      name: (json['name'] ?? '').toString(),
+      localPath: (json['local_path'] ?? '').toString(),
+      url: (json['url'] ?? '').toString(),
     );
   }
 }
@@ -77,33 +77,35 @@ class AssignmentModel {
   }) {
     final rawFiles = (json['research_files'] as List<dynamic>? ?? []);
     return AssignmentModel(
-      id: (json['id'] ?? '') as String,
-      courseId: (json['course_id'] ?? '') as String,
-      courseName: (json['course_name'] ?? fallbackCourseName) as String,
-      title: (json['title'] ?? '') as String,
-      type: (json['type'] ?? 'Tarea') as String,
-      link: (json['link'] ?? '') as String,
-      dueDate: (json['due_date'] ?? '') as String,
-      timeRemaining: (json['time_remaining'] ?? '-') as String,
-      status: (json['status'] ?? 'Pendiente') as String,
-      isCompleted: json['is_completed'] == true,
-      isOverdue: json['is_overdue'] == true,
-      descriptionText: (json['description_text'] ?? '') as String,
-      taskMode: (json['task_mode'] ?? 'digital') as String,
-      allowTokenSpend: json['allow_token_spend'] == true,
-      researchStatus: (json['research_status'] ?? 'idle') as String,
+      id: (json['id'] ?? '').toString(),
+      courseId: (json['course_id'] ?? '').toString(),
+      courseName: (json['course_name'] ?? fallbackCourseName).toString(),
+      title: (json['title'] ?? '').toString(),
+      type: (json['type'] ?? 'Tarea').toString(),
+      link: (json['link'] ?? '').toString(),
+      dueDate: (json['due_date'] ?? '').toString(),
+      timeRemaining: (json['time_remaining'] ?? '-').toString(),
+      status: (json['status'] ?? 'Pendiente').toString(),
+      isCompleted: json['is_completed'] == true || json['is_completed'] == 1,
+      isOverdue: json['is_overdue'] == true || json['is_overdue'] == 1,
+      descriptionText: (json['description_text'] ?? '').toString(),
+      taskMode: (json['task_mode'] ?? 'digital').toString(),
+      allowTokenSpend:
+          json['allow_token_spend'] == true || json['allow_token_spend'] == 1,
+      researchStatus: (json['research_status'] ?? 'idle').toString(),
       researchDriveFolderUrl:
-          (json['research_drive_folder_url'] ?? '') as String,
+          (json['research_drive_folder_url'] ?? '').toString(),
       researchFiles: rawFiles
-          .map((e) => StudyFileItem.fromJson(e as Map<String, dynamic>))
+          .whereType<Map<String, dynamic>>()
+          .map((e) => StudyFileItem.fromJson(e))
           .toList(),
-      researchSummary: (json['research_summary'] ?? '') as String,
-      resolutionStatus: (json['resolution_status'] ?? 'idle') as String,
-      resolutionDriveUrl: (json['resolution_drive_url'] ?? '') as String,
-      resolutionLocalPath: (json['resolution_local_path'] ?? '') as String,
-      consensusReport: (json['consensus_report'] ?? '') as String,
-      tokensUsed: (json['tokens_used'] ?? 0) as int,
-      isExternal: json['is_external'] == true,
+      researchSummary: (json['research_summary'] ?? '').toString(),
+      resolutionStatus: (json['resolution_status'] ?? 'idle').toString(),
+      resolutionDriveUrl: (json['resolution_drive_url'] ?? '').toString(),
+      resolutionLocalPath: (json['resolution_local_path'] ?? '').toString(),
+      consensusReport: (json['consensus_report'] ?? '').toString(),
+      tokensUsed: (json['tokens_used'] as num?)?.toInt() ?? 0,
+      isExternal: json['is_external'] == true || json['is_external'] == 1,
     );
   }
 }
@@ -124,17 +126,18 @@ class CourseModel {
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
-    final cname = (json['name'] ?? '') as String;
+    final cname = (json['name'] ?? '').toString();
     final rawActs = (json['assignments'] as List<dynamic>? ?? []);
     return CourseModel(
-      id: (json['id'] ?? '') as String,
+      id: (json['id'] ?? '').toString(),
       name: cname,
-      totalGrade: (json['total_grade'] ?? 'Sin calificar') as String,
-      isExternal: json['is_external'] == true,
+      totalGrade: (json['total_grade'] ?? 'Sin calificar').toString(),
+      isExternal: json['is_external'] == true || json['is_external'] == 1,
       assignments: rawActs
+          .whereType<Map<String, dynamic>>()
           .map(
             (a) => AssignmentModel.fromJson(
-              a as Map<String, dynamic>,
+              a,
               fallbackCourseName: cname,
             ),
           )
@@ -179,19 +182,21 @@ class SystemHealthStatus {
     final models = (json['models'] as Map<String, dynamic>? ?? {});
     return SystemHealthStatus(
       saiaConfigured: saia['configured'] == true,
-      saiaActive: saia['active'] as bool?,
-      saiaUser: (saia['user'] ?? 'Estudiante PSM') as String,
+      saiaActive: saia['active'] == true
+          ? true
+          : (saia['active'] == false ? false : null),
+      saiaUser: (saia['user'] ?? 'Estudiante PSM').toString(),
       geminiConfigured: aiKeys['gemini_configured'] == true,
       deepseekConfigured: aiKeys['deepseek_configured'] == true,
-      aiMode: (aiKeys['mode'] ?? 'Modo Simulación') as String,
+      aiMode: (aiKeys['mode'] ?? 'Modo Simulación').toString(),
       driveConnected: drive['connected'] == true,
-      driveMirrorPath: (drive['local_mirror_path'] ?? '') as String,
-      geminiModel: (models['gemini_model'] ?? 'gemini-3.8-flash') as String,
+      driveMirrorPath: (drive['local_mirror_path'] ?? '').toString(),
+      geminiModel: (models['gemini_model'] ?? 'gemini-3.8-flash').toString(),
       geminiArbiterModel:
-          (models['gemini_arbiter_model'] ?? 'gemini-4-argon') as String,
+          (models['gemini_arbiter_model'] ?? 'gemini-4-argon').toString(),
       deepseekModel:
-          (models['deepseek_model'] ?? 'deepseek-reasoner') as String,
-      totalTokensUsed: (json['total_tokens_used'] ?? 0) as int,
+          (models['deepseek_model'] ?? 'deepseek-reasoner').toString(),
+      totalTokensUsed: (json['total_tokens_used'] as num?)?.toInt() ?? 0,
     );
   }
 }

@@ -82,11 +82,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         _urlController.text,
                       );
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('URL actualizada y verificada.'),
-                          ),
-                        );
+                        if (widget.viewModel.errorMessage != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFFC62828),
+                              content: Text(
+                                'Error al conectar: ${widget.viewModel.errorMessage}',
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: Color(0xFF2E7D32),
+                              content: Text('¡Conectado exitosamente con Render!'),
+                            ),
+                          );
+                        }
                       }
                     },
                     icon: const Icon(Icons.sync),
