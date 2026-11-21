@@ -38,6 +38,27 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
+class NormalizePathMiddleware:
+    """Normaliza rutas con dobles barras como //api/health a /api/health."""
+
+    def __init__(self, app_instance):
+        self.app = app_instance
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http":
+            path = scope.get("path", "")
+            if "//" in path:
+                import re
+                cleaned = re.sub(r"/+", "/", path)
+                scope["path"] = cleaned
+                if "raw_path" in scope:
+                    scope["raw_path"] = cleaned.encode("ascii")
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(NormalizePathMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],

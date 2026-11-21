@@ -4,13 +4,13 @@ import 'package:http/http.dart' as http;
 class ApiService {
   String _baseUrl;
 
-  ApiService({String baseUrl = 'https://viernes-academic.onrender.com'})
-      : _baseUrl = baseUrl.replaceAll(RegExp(r'/$'), '');
+  ApiService({String baseUrl = 'https://viernes-academic-i7x3.onrender.com'})
+      : _baseUrl = baseUrl.replaceAll(RegExp(r'/+$'), '');
 
   String get baseUrl => _baseUrl;
 
   void updateBaseUrl(String url) {
-    _baseUrl = url.trim().replaceAll(RegExp(r'/$'), '');
+    _baseUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
   }
 
   String buildDownloadUrl(String localPath) {

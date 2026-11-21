@@ -9,7 +9,7 @@ import 'ui/features/settings/views/settings_screen.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final apiService =
-      ApiService(baseUrl: 'https://viernes-academic.onrender.com');
+      ApiService(baseUrl: 'https://viernes-academic-i7x3.onrender.com');
   final repository = AcademicRepository(apiService: apiService);
   final viewModel = DashboardViewModel(repository: repository)..initialize();
   runApp(PsmConsortiumApp(viewModel: viewModel));
